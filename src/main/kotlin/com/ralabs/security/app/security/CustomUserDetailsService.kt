@@ -16,18 +16,18 @@ class CustomUserDetailsService(
         val userDAO: UserDAO
 ) : UserDetailsService {
 
-    lateinit var userPrincipal: UserPrincipal
+   val userPrincipal: UserPrincipal = UserPrincipal();
 
     @Transactional
     @Throws(UsernameNotFoundException::class)
     override fun loadUserByUsername(username: String): UserDetails? {
-        lateinit var user: User
         try {
-           user = userDAO.findByUsername(username)
+            val user = userDAO.findByUsername(username)
+            return userPrincipal.create(user)
         } catch (e: UsernameNotFoundException) {
             logger.info("User not found with username or email : $username")
         }
-        return userPrincipal.create(user)
+       return null;
     }
 
     @Transactional

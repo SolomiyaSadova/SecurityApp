@@ -13,6 +13,8 @@ class UserPrincipal(
         private val password: String,
         private val authorities: List<GrantedAuthority>
 ) : UserDetails {
+
+    constructor() : this (null, "", "", emptyList());
    // private val authorities: Collection<GrantedAuthority?>? = null
     fun create(user: User): UserDetails? {
         val authorities: List<GrantedAuthority> = user.role.stream()
