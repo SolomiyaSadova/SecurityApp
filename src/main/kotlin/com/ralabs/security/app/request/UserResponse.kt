@@ -1,4 +1,10 @@
 package com.ralabs.security.app.request
 
-class UserResponse {
-}
+import com.ralabs.security.app.models.User
+
+
+data class UserResponse(
+        val id: Long,
+        val email: String,
+        val username: String
+)

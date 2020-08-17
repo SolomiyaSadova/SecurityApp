@@ -1,7 +1,10 @@
 package com.ralabs.security.app.models
 
 
+import com.ralabs.security.app.request.UserResponse
+import java.util.Optional.ofNullable
 import javax.persistence.*;
+import javax.validation.constraints.Email
 
 
 @Entity
@@ -9,15 +12,16 @@ import javax.persistence.*;
 data class User(
         @Id
         @GeneratedValue(strategy = GenerationType.AUTO)
-        val id: Long?,
-        var username: String,
-        var password: String,
+        val id: Long? = null,
+        @Email
+        val email: String,
+        val username: String,
+        val password: String,
         @ManyToMany(fetch = FetchType.LAZY)
         @JoinTable(name = "user_roles",
                 joinColumns = [JoinColumn(name = "user_id")],
                 inverseJoinColumns = [JoinColumn(name = "role_id")])
-        var role: Set<Role>
-
+        val role: Set<Role> = emptySet()
 ) {
-        constructor(username: String, password: String) : this(null, username, password, emptySet())
+        fun toResponse(): UserResponse = UserResponse(ofNullable(id).orElse(0), email, username)
 }

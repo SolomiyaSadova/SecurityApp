@@ -2,7 +2,7 @@ package com.ralabs.security.app.security
 
 import com.ralabs.security.app.exception.ResourceNotFoundException
 import com.ralabs.security.app.models.User
-import com.ralabs.security.app.repository.UserDAO
+import com.ralabs.security.app.repository.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,28 +13,27 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 class CustomUserDetailsService(
-        val userDAO: UserDAO
+        val userRepository: UserRepository
 ) : UserDetailsService {
-
-    lateinit var userPrincipal: UserPrincipal
 
     @Transactional
     @Throws(UsernameNotFoundException::class)
     override fun loadUserByUsername(username: String): UserDetails? {
-        lateinit var user: User
         try {
-           user = userDAO.findByUsername(username)
+            val user = userRepository.findByUsername(username)
+            return UserPrincipal.create(user)
         } catch (e: UsernameNotFoundException) {
             logger.info("User not found with username or email : $username")
         }
-        return userPrincipal.create(user)
+        return null
     }
 
     @Transactional
     fun loadUserById(id: Long): UserDetails? {
-        val user: User = userDAO!!.findById(id).orElseThrow<RuntimeException>
-        { ResourceNotFoundException("User", "id", id) }
-        return userPrincipal.create(user);
+        val user = userRepository.findById(id).orElseThrow {
+            ResourceNotFoundException("User", "id", id)
+        }
+        return UserPrincipal.create(user);
     }
 
     companion object {

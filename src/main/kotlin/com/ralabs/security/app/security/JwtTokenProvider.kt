@@ -12,50 +12,32 @@ import io.jsonwebtoken.UnsupportedJwtException
 
 @Component
 class JwtTokenProvider {
+
+    private val logger = LoggerFactory.getLogger(JwtTokenProvider::class.java)
+
     @Value("\${app.jwtSecret}")
-    private val jwtSecret: String? = null
+    lateinit var jwtSecret: String
 
     @Value("\${app.jwtExpirationInMs}")
-    private val jwtExpirationInMs = 0
+    lateinit var jwtExpirationInMs: String
+
     fun generateToken(authentication: Authentication): String {
         val userPrincipal = authentication.principal as UserPrincipal
         val now = Date()
-        val expiryDate = Date(now.time + jwtExpirationInMs)
+        val expiryDate = Date(now.time + jwtExpirationInMs.toLong())
         return Jwts.builder()
                 .setSubject(userPrincipal.id.toString())
-                .setIssuedAt(Date())
+                .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
                 .compact()
     }
 
     fun getUserIdFromJWT(token: String?): String {
-        val claims: Claims = Jwts.parser()
+        return Jwts.parser()
                 .setSigningKey(jwtSecret)
                 .parseClaimsJws(token)
                 .body
-        return claims.subject
-    }
-
-    fun validateToken(authToken: String?): Boolean {
-        try {
-            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken)
-            return true
-        } catch (ex: SignatureException) {
-            logger.error("Invalid JWT signature")
-        } catch (ex: MalformedJwtException) {
-            logger.error("Invalid JWT token")
-        } catch (ex: ExpiredJwtException) {
-            logger.error("Expired JWT token")
-        } catch (ex: UnsupportedJwtException) {
-            logger.error("Unsupported JWT token")
-        } catch (ex: IllegalArgumentException) {
-            logger.error("JWT claims string is empty.")
-        }
-        return false
-    }
-
-    companion object {
-        private val logger = LoggerFactory.getLogger(JwtTokenProvider::class.java)
+                .subject
     }
 }

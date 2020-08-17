@@ -2,8 +2,9 @@ package com.ralabs.security.app.security
 
 import org.slf4j.LoggerFactory
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
 import org.springframework.util.StringUtils
 import org.springframework.web.filter.OncePerRequestFilter
@@ -12,6 +13,7 @@ import javax.servlet.FilterChain
 import javax.servlet.ServletException
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+import java.util.Optional.ofNullable
 
 @Component
 class JwtAuthenticationFilter(
@@ -19,34 +21,42 @@ class JwtAuthenticationFilter(
         private val customUserDetailsService: CustomUserDetailsService
 ) : OncePerRequestFilter() {
 
+    companion object {
+        const val JWT_PREFIX = "Bearer"
+    }
 
     @Throws(ServletException::class, IOException::class)
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse,
                                   filterChain: FilterChain) {
         try {
-            val jwt = getJwtFromRequest(request)
-            if (StringUtils.hasText(jwt) && tokenProvider!!.validateToken(jwt)) {
-                val userId = tokenProvider.getUserIdFromJWT(jwt).toLong()
-                val userDetails = customUserDetailsService!!.loadUserById(userId)
-                val authentication = UsernamePasswordAuthenticationToken(userDetails,
-                        null, userDetails?.authorities)
-                authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
-                SecurityContextHolder.getContext().authentication = authentication
-            }
+            doAuthenticate(request)
         } catch (ex: Exception) {
-            Companion.logger.error("Could not set user authentication in security context", ex)
+            logger.error("Could not set user authentication in security context", ex)
         }
         filterChain.doFilter(request, response)
     }
 
     private fun getJwtFromRequest(request: HttpServletRequest): String? {
         val bearerToken = request.getHeader("Authorization")
-        return if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            bearerToken.substring(7, bearerToken.length)
+        return if (bearerToken.startsWith(JWT_PREFIX)) {
+            bearerToken.substring(JWT_PREFIX.length + " ".length, bearerToken.length)
         } else null
     }
 
-    companion object {
-        private val logger = LoggerFactory.getLogger(JwtAuthenticationFilter::class.java)
+    private fun doAuthenticate(request: HttpServletRequest): Unit {
+        val userDetails = getUserDetails(request)
+        ofNullable(userDetails).ifPresent {
+            val authentication = getAuthentication(it)
+            SecurityContextHolder.getContext().authentication = authentication
+        }
     }
+
+    private fun getUserDetails(request: HttpServletRequest): UserDetails? {
+        val jwt = getJwtFromRequest(request)
+        val userId = tokenProvider.getUserIdFromJWT(jwt).toLong()
+        return customUserDetailsService.loadUserById(userId)
+    }
+
+    private fun getAuthentication(userDetails: UserDetails): Authentication =
+            UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities)
 }
