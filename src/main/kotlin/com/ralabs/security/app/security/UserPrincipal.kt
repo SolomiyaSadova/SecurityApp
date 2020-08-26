@@ -8,18 +8,25 @@ import java.util.stream.Collectors
 
 class UserPrincipal(
         val id: Long?,
-        private val username: String,
+        private val firstName: String,
+        private val lastName: String,
+        private val email: String,
         private val password: String,
         private val authorities: List<GrantedAuthority>
 ) : UserDetails {
 
     companion object {
         fun create(user: User): UserDetails? {
-            val authorities: List<GrantedAuthority> = user.role.stream()
-                    .map { role -> SimpleGrantedAuthority(role.roleName.name) }.collect(Collectors.toList())
+            val authorities: List<GrantedAuthority> = user.role
+                    .stream()
+                    .map { SimpleGrantedAuthority(it.roleName.name) }
+                    .collect(Collectors.toList())
+
             return UserPrincipal(
                     user.id,
-                    user.username,
+                    user.firstName,
+                    user.lastName,
+                    user.email,
                     user.password,
                     authorities
             )
@@ -27,8 +34,8 @@ class UserPrincipal(
 
     }
 
-    override fun getUsername(): String {
-        return username;
+    override fun getUsername(): String? {
+        return email;
     }
 
     override fun getPassword(): String {

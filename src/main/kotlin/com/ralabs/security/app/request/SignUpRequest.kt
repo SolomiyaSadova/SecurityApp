@@ -1,7 +1,11 @@
 package com.ralabs.security.app.request
 
-data class LoginRequest(
+import javax.validation.constraints.Email
+
+data class SignUpRequest(
+        val firstName: String,
+        val lastName: String,
+      //  @Email
         val email: String,
-        val username: String,
         val password: String
 )
