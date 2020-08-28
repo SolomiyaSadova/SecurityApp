@@ -62,8 +62,6 @@ class SecurityConfig(
                 .authorizeRequests()
                 .antMatchers("/auth/**")
                 .permitAll()
-                .antMatchers("/console")
-                .permitAll()
                 .anyRequest()
                 .authenticated()
 

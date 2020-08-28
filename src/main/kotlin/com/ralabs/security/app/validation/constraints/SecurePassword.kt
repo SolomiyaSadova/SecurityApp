@@ -6,7 +6,7 @@ import kotlin.reflect.KClass
 
 
 @MustBeDocumented
-@Constraint(validatedBy = [PasswordConstraintValidator::class])
+@Constraint(validatedBy = [SecurePasswordConstraintValidator::class])
 @Target(allowedTargets = [
     AnnotationTarget.FIELD,
     AnnotationTarget.VALUE_PARAMETER,
@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
     AnnotationTarget.PROPERTY_SETTER
 ])
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ValidPassword(
+annotation class SecurePassword(
         val message: String = "Invalid Password",
         val groups: Array<KClass<*>> = [],
         val payload: Array<KClass<out Payload>> = []

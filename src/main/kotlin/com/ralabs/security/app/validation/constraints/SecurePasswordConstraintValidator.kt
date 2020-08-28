@@ -1,19 +1,21 @@
 package com.ralabs.security.app.validation.constraints
 
 import org.passay.*
+import org.springframework.context.annotation.Profile
 import java.util.stream.Collectors
 import javax.validation.ConstraintValidator
 import javax.validation.ConstraintValidatorContext
 
 
-internal class PasswordConstraintValidator : ConstraintValidator<SecurePassword, String> {
+@Profile("!local")
+internal class SecurePasswordConstraintValidator : PasswordConstraintValidator() {
     override fun initialize(arg0: SecurePassword) {}
     override fun isValid(password: String?, context: ConstraintValidatorContext): Boolean {
         val validator = PasswordValidator(listOf(
                 LengthRule(8, 30),
                 UppercaseCharacterRule(1),
                 DigitCharacterRule(1),
-               // SpecialCharacterRule(1),
+                // SpecialCharacterRule(1),
                 NumericalSequenceRule(3, false),
                 AlphabeticalSequenceRule(3, false),
                 QwertySequenceRule(3, false),

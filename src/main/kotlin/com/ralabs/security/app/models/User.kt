@@ -17,7 +17,7 @@ data class User(
         val lastName: String,
         @Email
         val email: String,
-        val password: String,
+        var password: String,
         @ManyToMany(fetch = FetchType.LAZY)
         @JoinTable(name = "users_roles",
                 joinColumns = [JoinColumn(name = "user_id")],

@@ -1,19 +1,13 @@
 package com.ralabs.security.app.controller
 
-import com.google.gson.Gson
 import com.ralabs.security.app.DemoApplication
-import com.ralabs.security.app.models.User
-import com.ralabs.security.app.repository.RoleRepository
-import com.ralabs.security.app.repository.UserRepository
 import com.ralabs.security.app.request.LoginRequest
 import com.ralabs.security.app.request.SignUpRequest
-import com.ralabs.security.app.request.UserResponse
+import com.ralabs.security.app.service.TestService
 import junit.framework.Assert.assertTrue
-import org.codehaus.jackson.map.ObjectMapper
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.json.JacksonJsonParser
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
@@ -38,17 +32,15 @@ class AuthControllerTest {
     private lateinit var mockMvc: MockMvc
 
     @Autowired
-    lateinit var userRepository: UserRepository
-
-    val objectMapper: ObjectMapper = ObjectMapper();
+    lateinit var testService: TestService
 
     @Test
     @DisplayName("should sign up and return new created user")
     fun signUpUser() {
         val signUpRequest = SignUpRequest(email = "user1@gmail.com",
-                firstName = "user1", lastName = "user1", password = "user1")
+                firstName = "user1", lastName = "user1", password = "newUser1", confirmPassword = "newUser1")
 
-        val body = asJsonString(signUpRequest)
+        val body = testService.asJsonString(signUpRequest)
         val response = mockMvc
                 .perform(MockMvcRequestBuilders.post("${URL}/signup")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -57,7 +49,7 @@ class AuthControllerTest {
                 .andExpect(status().isOk)
                 .andReturn().response.contentAsString
 
-        val savedUser = getObjectFromJsonString(response)
+        val savedUser = testService.getObjectFromJsonString(response)
         assertTrue(response.isNotEmpty())
         assertTrue(savedUser.email == signUpRequest.email)
     }
@@ -66,9 +58,9 @@ class AuthControllerTest {
     @DisplayName("should save user in database")
     fun saveUser() {
         val signUpRequest = SignUpRequest(email = "user2@gmail.com",
-                lastName = "user2", firstName = "user2", password = "user2")
+                lastName = "user2", firstName = "user2", password = "newUser2", confirmPassword = "newUser2")
 
-        val body = asJsonString(signUpRequest)
+        val body = testService.asJsonString(signUpRequest)
         val response = mockMvc
                 .perform(MockMvcRequestBuilders.post("${URL}/signup")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -77,7 +69,7 @@ class AuthControllerTest {
                 .andExpect(status().isOk)
                 .andReturn().response.contentAsString
 
-        val savedUser = userRepository.findByEmail(signUpRequest.email)
+        val savedUser = testService.userRepository.findByEmail(signUpRequest.email)
         assertTrue(response.isNotEmpty())
         assertTrue(savedUser.email == signUpRequest.email)
     }
@@ -86,9 +78,9 @@ class AuthControllerTest {
     @DisplayName("should not save user in database because of wrong email")
     fun trySaveUserWithWrongEmail() {
         val signUpRequest = SignUpRequest(email = "user3",
-                lastName = "user3", firstName = "user3", password = "user3")
+                lastName = "user3", firstName = "user3", password = "user3", confirmPassword = "user3")
 
-        val body = asJsonString(signUpRequest)
+        val body = testService.asJsonString(signUpRequest)
         mockMvc.perform(MockMvcRequestBuilders.post("${URL}/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body)
@@ -102,9 +94,9 @@ class AuthControllerTest {
     @DisplayName("should not save user in database because of using the same email by another user ")
     fun trySaveUserWithUsedEmail() {
         val signUpRequest = SignUpRequest(email = "admin@gmail.com",
-                lastName = "user3", firstName = "user3", password = "user3")
+                lastName = "user3", firstName = "user3", password = "user3", confirmPassword = "user3")
 
-        val body = asJsonString(signUpRequest)
+        val body = testService.asJsonString(signUpRequest)
         mockMvc.perform(MockMvcRequestBuilders.post("${URL}/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body)
@@ -118,7 +110,7 @@ class AuthControllerTest {
     @DisplayName("should sign in and return jwt token")
     fun userSignIn() {
         val loginRequest = LoginRequest(email = "admin@gmail.com", password = "admin")
-        val body = asJsonString(loginRequest)
+        val body = testService.asJsonString(loginRequest)
         mockMvc.perform(MockMvcRequestBuilders.post("${URL}/signin")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body)
@@ -132,7 +124,7 @@ class AuthControllerTest {
     @DisplayName("should not sign in and return unauthorized")
     fun userSignInWithBadCredentials() {
         val loginRequest = LoginRequest(email = "admin", password = "admin")
-        val body = asJsonString(loginRequest)
+        val body = testService.asJsonString(loginRequest)
         mockMvc.perform(MockMvcRequestBuilders.post("${URL}/signin")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body)
@@ -157,42 +149,11 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("should allow access to  user")
+    @DisplayName("should allow access to user")
     fun shouldAllowAccessToUser() {
-        val accessToken = obtainAccessToken()
+        val accessToken = testService.obtainAccessToken()
         mockMvc.perform(MockMvcRequestBuilders.get("/hello")
                 .header("Authorization", "Bearer $accessToken"))
                 .andExpect(status().isOk)
-    }
-
-    private fun obtainAccessToken(): String {
-        val loginRequest = LoginRequest(email = "admin@gmail.com", password = "admin")
-        val body = asJsonString(loginRequest)
-        val result = mockMvc.perform(MockMvcRequestBuilders.post("${URL}/signin")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body)
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk)
-                .andReturn().response.contentAsString
-
-        val jsonParser = JacksonJsonParser()
-        return jsonParser.parseMap(result)["accessToken"].toString()
-    }
-
-    private fun asJsonString(obj: Any?): String {
-        return try {
-            objectMapper.writeValueAsString(obj)
-        } catch (e: Exception) {
-            throw RuntimeException(e)
-        }
-    }
-
-    private fun getObjectFromJsonString(jsonString: String): UserResponse {
-        return try {
-            val gson = Gson()
-            gson.fromJson(jsonString, UserResponse::class.java)
-        } catch (e: Exception) {
-            throw RuntimeException(e)
-        }
     }
 }

@@ -1,4 +1,6 @@
 package com.ralabs.security.app.validation.constraints
 
-interface PasswordConstraintValidator {
-}
+import javax.validation.ConstraintValidator
+import javax.validation.ConstraintValidatorContext
+
+abstract class PasswordConstraintValidator : ConstraintValidator<SecurePassword, String>
