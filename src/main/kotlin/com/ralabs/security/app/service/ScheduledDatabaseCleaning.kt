@@ -17,8 +17,6 @@ class ScheduledDatabaseCleaning(
 
     @Scheduled(fixedRateString = "\${delay.before.database.cleaning}")
     fun cleanPasswordResetTokenInDatabase(): Unit {
-     //   val formatter: DateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-       // val formattedDate = formatter.parse(Date(System.currentTimeMillis()).toString())
         log.info("Scheduled cleaning PasswordResetToken table in database...")
         passwordResetTokenRepository.deleteAllExpiredSince(getDateInRightFormat())
     }

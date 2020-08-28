@@ -1,11 +1,13 @@
 package com.ralabs.security.app.service
 
-import com.google.gson.Gson
 import com.ralabs.security.app.controller.URL
 import com.ralabs.security.app.repository.UserRepository
+import com.ralabs.security.app.request.ApiResponse
 import com.ralabs.security.app.request.LoginRequest
 import com.ralabs.security.app.request.UserResponse
+import org.apache.tomcat.util.json.JSONParser
 import org.codehaus.jackson.map.ObjectMapper
+import org.codehaus.jackson.type.JavaType
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.json.JacksonJsonParser
 import org.springframework.http.MediaType
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import javax.tools.JavaFileObject
 
 @Service
 class TestService {
@@ -46,10 +49,17 @@ class TestService {
         }
     }
 
-    fun getObjectFromJsonString(jsonString: String): UserResponse {
+    fun getUserResponseFromJsonString(jsonString: String): UserResponse {
         return try {
-            val gson = Gson()
-            gson.fromJson(jsonString, UserResponse::class.java)
+            objectMapper.readValue(jsonString, UserResponse::class.java)
+        } catch (e: Exception) {
+            throw RuntimeException(e)
+        }
+    }
+
+    fun getApiResponseFromJsonString(jsonString: String): ApiResponse {
+        return try {
+            objectMapper.readValue(jsonString, ApiResponse::class.java)
         } catch (e: Exception) {
             throw RuntimeException(e)
         }

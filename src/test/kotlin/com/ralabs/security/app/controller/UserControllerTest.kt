@@ -4,7 +4,7 @@ import com.ralabs.security.app.DemoApplication
 import com.ralabs.security.app.request.password.PasswordChangeRequest
 import com.ralabs.security.app.request.password.PasswordResetRequest
 import com.ralabs.security.app.service.TestService
-import junit.framework.Assert.assertTrue
+import org.junit.Assert.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -49,19 +49,37 @@ class UserControllerTest {
         assertTrue(response.isNotEmpty())
     }
 
-//    @Test
-//    @DisplayName("should not change password because of bad password")
-//    fun changePasswordBadRequest() {
-//        val passwordRequest = PasswordRequest("admin", "", "newAdmin")
-//        val body = testService.asJsonString(passwordRequest);
-//        val accessToken = testService.obtainAccessToken()
-//        mockMvc.perform(MockMvcRequestBuilders.post("/changePassword")
-//                .header("Authorization", "Bearer $accessToken")
-//                .contentType(MediaType.APPLICATION_JSON)
-//                .content(body)
-//                .accept(MediaType.APPLICATION_JSON))
-//                .andExpect(MockMvcResultMatchers.status().isBadRequest)
-//                .andReturn().response.contentAsString
-//    }
+    @Test
+    @DisplayName("should not change password because of bad password")
+    fun changePasswordBadRequest() {
+        val passwordRequest = PasswordChangeRequest("admin", "newAdmin", "newAdmin")
+        val body = testService.asJsonString(passwordRequest);
+        val accessToken = testService.obtainAccessToken()
+        mockMvc.perform(MockMvcRequestBuilders.post("/changePassword")
+                .header("Authorization", "Bearer $accessToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest)
+                .andReturn().response.contentAsString
+    }
 
+    @Test
+    @DisplayName("should not change password because newPasswordConfirm field doesnt matches newPassword field")
+    fun changePasswordBadRequestNewPasswordConfirmField() {
+        val passwordRequest = PasswordChangeRequest("admin", "newAdmin1", "newAdin1")
+        val body = testService.asJsonString(passwordRequest);
+        val accessToken = testService.obtainAccessToken()
+        val response = mockMvc.perform(MockMvcRequestBuilders.post("/changePassword")
+                .header("Authorization", "Bearer $accessToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest)
+                .andReturn().response.contentAsString
+//
+//        val apiRequest = testService.getApiResponseFromJsonString(response);
+//        assertTrue(!apiRequest.success)
+//        assertTrue(apiRequest.message == "Confirm password field doesn't match the password")
+    }
 }

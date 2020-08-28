@@ -52,8 +52,8 @@ class AuthService(
         return authentication
     }
 
-    fun isPasswordConfirmPasswordMatched(signUpRequest: SignUpRequest): Boolean {
-        if(signUpRequest.password == signUpRequest.confirmPassword) {
+    fun isPasswordConfirmPasswordMatched(password: String, confirmPassword: String): Boolean {
+        if(password == confirmPassword) {
             return true
         }
         return false

@@ -3,9 +3,7 @@ package com.ralabs.security.app.validation.constraints
 import org.passay.*
 import org.springframework.context.annotation.Profile
 import java.util.stream.Collectors
-import javax.validation.ConstraintValidator
 import javax.validation.ConstraintValidatorContext
-
 
 @Profile("!local")
 internal class SecurePasswordConstraintValidator : PasswordConstraintValidator() {

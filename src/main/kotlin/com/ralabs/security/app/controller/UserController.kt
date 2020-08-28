@@ -5,6 +5,7 @@ import com.ralabs.security.app.repository.UserRepository
 import com.ralabs.security.app.request.ApiResponse
 import com.ralabs.security.app.request.password.PasswordChangeRequest
 import com.ralabs.security.app.request.password.PasswordResetRequest
+import com.ralabs.security.app.service.AuthService
 import com.ralabs.security.app.service.UserService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -23,6 +24,7 @@ import javax.validation.Valid
 @RestController
 class UserController(
         val userService: UserService,
+        val authService: AuthService,
         val userRepository: UserRepository,
         val passwordResetTokenRepository: PasswordResetTokenRepository
 ) {
@@ -39,13 +41,16 @@ class UserController(
             return ResponseEntity(ApiResponse(false, "New password is the same as old"),
                     HttpStatus.BAD_REQUEST)
         }
-        if (passwordChangeRequest.newPassword != passwordChangeRequest.newPasswordConfirm) {
-            return ResponseEntity(ApiResponse(false, "Confirm password field doesn't match the password"),
+        if (!authService.isPasswordConfirmPasswordMatched(
+                        passwordChangeRequest.newPassword, passwordChangeRequest.newPasswordConfirm)) {
+            return ResponseEntity(ApiResponse(false,
+                    "Confirm password field doesn't match the password"),
                     HttpStatus.BAD_REQUEST)
         }
         userService.changeUserPassword(user, passwordChangeRequest.newPassword)
 
-        return ResponseEntity(ApiResponse(true, "Success. New password - ${passwordChangeRequest.newPassword}"),
+        return ResponseEntity(ApiResponse(true,
+                "Success. New password - ${passwordChangeRequest.newPassword}"),
                 HttpStatus.OK)
     }
 

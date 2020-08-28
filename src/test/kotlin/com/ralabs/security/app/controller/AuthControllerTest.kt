@@ -4,7 +4,7 @@ import com.ralabs.security.app.DemoApplication
 import com.ralabs.security.app.request.LoginRequest
 import com.ralabs.security.app.request.SignUpRequest
 import com.ralabs.security.app.service.TestService
-import junit.framework.Assert.assertTrue
+import org.junit.Assert.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -49,7 +49,7 @@ class AuthControllerTest {
                 .andExpect(status().isOk)
                 .andReturn().response.contentAsString
 
-        val savedUser = testService.getObjectFromJsonString(response)
+        val savedUser = testService.getUserResponseFromJsonString(response)
         assertTrue(response.isNotEmpty())
         assertTrue(savedUser.email == signUpRequest.email)
     }

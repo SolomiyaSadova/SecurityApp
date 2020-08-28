@@ -10,6 +10,6 @@ internal class ConfirmPasswordValidator(
         private val authService: AuthService
 ) : ConstraintValidator<ConfirmPassword, SignUpRequest> {
     override fun isValid(signUpRequest: SignUpRequest, context: ConstraintValidatorContext): Boolean {
-        return authService.isPasswordConfirmPasswordMatched(signUpRequest)
+        return authService.isPasswordConfirmPasswordMatched(signUpRequest.password, signUpRequest.confirmPassword)
     }
 }

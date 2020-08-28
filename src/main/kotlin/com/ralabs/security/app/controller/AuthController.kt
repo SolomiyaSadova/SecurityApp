@@ -35,7 +35,7 @@ class AuthController(
             return ResponseEntity(ApiResponse(false, "Email has been used by another account"),
                     HttpStatus.BAD_REQUEST)
         }
-        if (!authService.isPasswordConfirmPasswordMatched(signUpRequest)) {
+        if (!authService.isPasswordConfirmPasswordMatched(signUpRequest.password, signUpRequest.confirmPassword)) {
             return ResponseEntity(ApiResponse(false, "Confirm password field doesn't match the password"),
                     HttpStatus.BAD_REQUEST)
         }
