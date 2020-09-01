@@ -1,4 +1,3 @@
 package com.ralabs.security.app.exception
 
-class UserAlreadyExistsException {
-}
+class UserAlreadyExistsException(override val message: String?) : Exception(message)

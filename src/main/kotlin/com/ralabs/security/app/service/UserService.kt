@@ -5,6 +5,8 @@ import com.ralabs.security.app.models.User
 import com.ralabs.security.app.repository.PasswordResetTokenRepository
 import com.ralabs.security.app.repository.UserRepository
 import com.ralabs.security.app.request.ApiResponse
+import io.jsonwebtoken.Claims
+import io.jsonwebtoken.impl.DefaultClaims
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.*

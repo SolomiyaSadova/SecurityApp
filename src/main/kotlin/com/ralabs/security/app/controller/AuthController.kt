@@ -1,5 +1,7 @@
 package com.ralabs.security.app.controller
 
+import com.ralabs.security.app.exception.ConfirmPasswordDoesntMatchPasswordException
+import com.ralabs.security.app.exception.UserAlreadyExistsException
 import com.ralabs.security.app.models.Role
 import com.ralabs.security.app.models.RoleName
 import com.ralabs.security.app.models.User
@@ -32,12 +34,10 @@ class AuthController(
             : ResponseEntity<*> {
 
         if (userRepository.existsByEmail(signUpRequest.email)) {
-            return ResponseEntity(ApiResponse(false, "Email has been used by another account"),
-                    HttpStatus.BAD_REQUEST)
+            throw UserAlreadyExistsException("User with email ${signUpRequest.email} already exists")
         }
         if (!authService.isPasswordConfirmPasswordMatched(signUpRequest.password, signUpRequest.confirmPassword)) {
-            return ResponseEntity(ApiResponse(false, "Confirm password field doesn't match the password"),
-                    HttpStatus.BAD_REQUEST)
+            throw ConfirmPasswordDoesntMatchPasswordException("Confirm password field doesn't match the password field")
         }
         val userWithRole = authService.assignUserRole(authService.toUser(signUpRequest))
         val savedUser = userRepository.save(userWithRole)

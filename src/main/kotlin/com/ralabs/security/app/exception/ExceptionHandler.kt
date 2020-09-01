@@ -10,8 +10,8 @@ import org.springframework.web.context.request.WebRequest
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 
 @ControllerAdvice
-class ControllerAdviceRequestError : ResponseEntityExceptionHandler() {
-    @ExceptionHandler(value = [(UserAlreadyExistsException::class)])
+class ExceptionHandler : ResponseEntityExceptionHandler() {
+    @ExceptionHandler(UserAlreadyExistsException::class)
     fun handleUserAlreadyExists(ex: UserAlreadyExistsException, request: WebRequest): ResponseEntity<ApiResponse> {
         return ResponseEntity(ApiResponse(false, ex.message), HttpStatus.BAD_REQUEST)
     }

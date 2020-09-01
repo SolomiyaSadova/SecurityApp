@@ -5,6 +5,8 @@ import com.ralabs.security.app.security.JwtAuthenticationEntryPoint
 import com.ralabs.security.app.security.JwtAuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.BeanIds
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
@@ -15,6 +17,9 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices
+import org.springframework.security.oauth2.provider.token.TokenStore
+import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 
@@ -24,9 +29,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 class SecurityConfig(
         val customUserDetailsService: CustomUserDetailsService,
         val unauthorizedHandler: JwtAuthenticationEntryPoint,
-        val jwtAuthenticationFilter: JwtAuthenticationFilter
-
+        val jwtAuthenticationFilter: JwtAuthenticationFilter,
+        val jdbcTemplate: JdbcTemplate
 ) : WebSecurityConfigurerAdapter() {
+
+    @Bean
+    fun tokenStore(): TokenStore? {
+        return JdbcTokenStore(jdbcTemplate.getDataSource())
+    }
 
     @Throws(Exception::class)
     public override fun configure(authenticationManagerBuilder: AuthenticationManagerBuilder) {
@@ -35,6 +45,14 @@ class SecurityConfig(
                 .passwordEncoder(passwordEncoder())
     }
 
+    @Bean
+    @Primary //Making this primary to avoid any accidental duplication with another token service instance of the same name
+    fun tokenServices(): DefaultTokenServices? {
+        val defaultTokenServices = DefaultTokenServices()
+        defaultTokenServices.setTokenStore(tokenStore())
+        defaultTokenServices.setSupportRefreshToken(true)
+        return defaultTokenServices
+    }
     @Bean(BeanIds.AUTHENTICATION_MANAGER)
     @Throws(Exception::class)
     override fun authenticationManagerBean(): AuthenticationManager {

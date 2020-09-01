@@ -1,20 +1,22 @@
 package com.ralabs.security.app.controller
 
+import com.ralabs.security.app.exception.ConfirmPasswordDoesntMatchPasswordException
 import com.ralabs.security.app.repository.PasswordResetTokenRepository
 import com.ralabs.security.app.repository.UserRepository
 import com.ralabs.security.app.request.ApiResponse
 import com.ralabs.security.app.request.password.PasswordChangeRequest
 import com.ralabs.security.app.request.password.PasswordResetRequest
+import com.ralabs.security.app.security.JwtAuthenticationFilter
+import com.ralabs.security.app.security.JwtTokenProvider
 import com.ralabs.security.app.service.AuthService
 import com.ralabs.security.app.service.UserService
+import io.jsonwebtoken.Claims
+import io.jsonwebtoken.impl.DefaultClaims
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.validation.annotation.Validated
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.validation.Valid
@@ -26,7 +28,9 @@ class UserController(
         val userService: UserService,
         val authService: AuthService,
         val userRepository: UserRepository,
-        val passwordResetTokenRepository: PasswordResetTokenRepository
+        val passwordResetTokenRepository: PasswordResetTokenRepository,
+        val jwtTokenProvider: JwtTokenProvider,
+        val jwtAuthenticationFilter: JwtAuthenticationFilter
 ) {
 
     @PostMapping("/changePassword")
@@ -43,9 +47,7 @@ class UserController(
         }
         if (!authService.isPasswordConfirmPasswordMatched(
                         passwordChangeRequest.newPassword, passwordChangeRequest.newPasswordConfirm)) {
-            return ResponseEntity(ApiResponse(false,
-                    "Confirm password field doesn't match the password"),
-                    HttpStatus.BAD_REQUEST)
+            throw ConfirmPasswordDoesntMatchPasswordException("Confirm password field doesn't match the password field")
         }
         userService.changeUserPassword(user, passwordChangeRequest.newPassword)
 
@@ -78,4 +80,15 @@ class UserController(
             ResponseEntity(ApiResponse(true, "Success"), HttpStatus.OK)
         }
     }
+
+
+    @GetMapping("/refreshToken")
+    fun refreshToken(request: HttpServletRequest): ResponseEntity<*>? {
+        val token = jwtAuthenticationFilter.getJwtFromRequest(request)
+        val claims = jwtTokenProvider.getUserClaims(token)
+        val newToken: String? = jwtTokenProvider.doGenerateRefreshToken(claims)
+        return ResponseEntity(ApiResponse(true, "Token is refreshed. Token - $newToken"),
+                HttpStatus.OK)
+    }
+
 }
