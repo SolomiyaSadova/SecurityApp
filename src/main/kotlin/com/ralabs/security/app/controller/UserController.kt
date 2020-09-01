@@ -33,7 +33,7 @@ class UserController(
         val jwtAuthenticationFilter: JwtAuthenticationFilter
 ) {
 
-    @PostMapping("/changePassword")
+    @PostMapping("password/change")
     fun changePassword(@Valid @RequestBody passwordChangeRequest: PasswordChangeRequest)
             : ResponseEntity<ApiResponse> {
         val user = userRepository.findByEmail(SecurityContextHolder.getContext().authentication.name)
@@ -56,7 +56,7 @@ class UserController(
                 HttpStatus.OK)
     }
 
-    @PostMapping("/resetPassword")
+    @PostMapping("password/reset")
     fun resetPassword(request: HttpServletRequest,
                       @RequestParam("email") email: String): ResponseEntity<ApiResponse> {
         val user = userRepository.findByEmail(email)
@@ -67,7 +67,7 @@ class UserController(
         return ResponseEntity(ApiResponse(true, "Success"), HttpStatus.OK)
     }
 
-    @PostMapping("/resetPasswordWithToken")
+    @PostMapping("password/resetWithToken")
     fun resetPasswordWithToken(request: HttpServletRequest, @RequestBody passwordResetRequest: PasswordResetRequest
     ): ResponseEntity<ApiResponse> {
         val result = userService.validatePasswordResetToken(passwordResetRequest.token)
@@ -82,7 +82,7 @@ class UserController(
     }
 
 
-    @GetMapping("/refreshToken")
+    @GetMapping("token/refresh")
     fun refreshToken(request: HttpServletRequest): ResponseEntity<*>? {
         val token = jwtAuthenticationFilter.getJwtFromRequest(request)
         val claims = jwtTokenProvider.getUserClaims(token)

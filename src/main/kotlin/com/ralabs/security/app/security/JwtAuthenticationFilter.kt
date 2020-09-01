@@ -34,7 +34,7 @@ class JwtAuthenticationFilter(
             val isRefreshToken: String = request.getHeader("isRefreshToken");
             val requestURL: String = request.requestURL.toString();
             // allow for Refresh Token creation if following conditions are true.
-            if (isRefreshToken == "true" && requestURL.contains("refreshToken")) {
+            if (isRefreshToken == "true" && requestURL.contains("token/refresh")) {
                 allowForRefreshToken(ex, request);
             }
         } catch (ex: Exception) {

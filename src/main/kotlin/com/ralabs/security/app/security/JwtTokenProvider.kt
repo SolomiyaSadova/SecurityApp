@@ -47,15 +47,15 @@ class JwtTokenProvider(
     }
 
     fun getUserClaims(token: String?): Claims {
-       return try {
+        return try {
             val claims = Jwts.parserBuilder()
                     .setSigningKey(secretKey)
                     .build()
                     .parseClaimsJws(token)
-           return claims.body
+            claims.body
         } catch (e: ExpiredJwtException) {
             BytecodeLogger.LOGGER.error("Jwt token is expired")
-            return e.claims
+            e.claims
         }
     }
 
