@@ -19,9 +19,9 @@ data class User(
         @Email
         val email: String,
         var password: String,
-//        var verified: Boolean = false,
-//        @CreatedDate
-//        val createdAt: LocalDateTime = LocalDateTime.now(),
+        var verified: Boolean = false,
+        @CreatedDate
+        val createdAt: LocalDateTime = LocalDateTime.now(),
         @ManyToMany(fetch = FetchType.LAZY)
         @JoinTable(name = "users_roles",
                 joinColumns = [JoinColumn(name = "user_id")],

@@ -1,6 +1,8 @@
 package com.ralabs.security.app.controller
 
+import com.ralabs.security.app.event.OnRegistrationCompleteEvent
 import com.ralabs.security.app.exception.ConfirmPasswordDoesntMatchPasswordException
+import com.ralabs.security.app.exception.UserNotFoundException
 import com.ralabs.security.app.repository.PasswordResetTokenRepository
 import com.ralabs.security.app.repository.UserRepository
 import com.ralabs.security.app.request.ApiResponse
@@ -12,6 +14,7 @@ import com.ralabs.security.app.service.AuthService
 import com.ralabs.security.app.service.UserService
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.impl.DefaultClaims
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
@@ -28,7 +31,7 @@ class UserController(
         val userService: UserService,
         val authService: AuthService,
         val userRepository: UserRepository,
-        val passwordResetTokenRepository: PasswordResetTokenRepository,
+        val eventPublisher: ApplicationEventPublisher,
         val jwtTokenProvider: JwtTokenProvider,
         val jwtAuthenticationFilter: JwtAuthenticationFilter
 ) {
@@ -37,6 +40,8 @@ class UserController(
     fun changePassword(@Valid @RequestBody passwordChangeRequest: PasswordChangeRequest)
             : ResponseEntity<ApiResponse> {
         val user = userRepository.findByEmail(SecurityContextHolder.getContext().authentication.name)
+                ?: return ResponseEntity(ApiResponse(
+                        false, "There are not user with this email"), HttpStatus.NOT_FOUND)
         if (!userService.checkIfValidOldPassword(user, passwordChangeRequest.oldPassword)) {
             return ResponseEntity(ApiResponse(false, "Old password is invalid"),
                     HttpStatus.BAD_REQUEST)
@@ -56,28 +61,28 @@ class UserController(
                 HttpStatus.OK)
     }
 
-    @PostMapping("password/reset")
+    @GetMapping("password/reset")
     fun resetPassword(request: HttpServletRequest,
                       @RequestParam("email") email: String): ResponseEntity<ApiResponse> {
         val user = userRepository.findByEmail(email)
-        val token = UUID.randomUUID().toString()
-        userService.createPasswordResetTokenForUser(user, token)
-//        mailSender.send(constructResetTokenEmail(getAppUrl(request),
-//                request.locale, token, user))
-        return ResponseEntity(ApiResponse(true, "Success"), HttpStatus.OK)
+                ?: return ResponseEntity(ApiResponse(
+                        false, "There are not user with this email"), HttpStatus.NOT_FOUND)
+        val appUrl: String = request.contextPath
+        eventPublisher.publishEvent(OnRegistrationCompleteEvent(user,
+                request.locale, appUrl, "reset password"))
+        return ResponseEntity(ApiResponse(true, "Success. Check your email."), HttpStatus.OK)
     }
 
-    @PostMapping("password/resetWithToken")
-    fun resetPasswordWithToken(request: HttpServletRequest, @RequestBody passwordResetRequest: PasswordResetRequest
+    @GetMapping("password/reset/token")
+    fun resetPasswordWithToken(@RequestBody passwordResetRequest: PasswordResetRequest
     ): ResponseEntity<ApiResponse> {
         val result = userService.validatePasswordResetToken(passwordResetRequest.token)
-
         return if (!result.success) {
             ResponseEntity(result, HttpStatus.BAD_REQUEST)
         } else {
             val user = userService.getUserByPasswordResetToken(passwordResetRequest.token)
             userService.changeUserPassword(user, passwordResetRequest.newPassword);
-            ResponseEntity(ApiResponse(true, "Success"), HttpStatus.OK)
+            ResponseEntity(ApiResponse(true, "Success. Password was changed."), HttpStatus.OK)
         }
     }
 

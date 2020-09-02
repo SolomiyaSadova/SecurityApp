@@ -71,7 +71,7 @@ class AuthControllerTest {
 
         val savedUser = testService.userRepository.findByEmail(signUpRequest.email)
         assertTrue(response.isNotEmpty())
-        assertTrue(savedUser.email == signUpRequest.email)
+        assertTrue(savedUser?.email == signUpRequest.email)
     }
 
     @Test

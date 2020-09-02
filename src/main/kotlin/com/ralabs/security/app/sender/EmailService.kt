@@ -29,11 +29,11 @@ class EmailService(
     @Value("\${spring.mail.username}")
     lateinit var emailFrom: String
 
-    fun sendWelcomeEmail(mail: Mail) {
+    fun sendConfirmationEmail(mail: Mail) {
         val message: MimeMessage = javaMailSender.createMimeMessage()
         val model: MutableMap<String, Any> = HashMap()
         model["Name"] = mail.to
-        model["location"] = "Bangalore,India"
+        model["location"] = "Lviv,Ukraine"
         try {
             val t: Template = config.getTemplate("confirm.ftl")
             val helper = MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
@@ -43,9 +43,10 @@ class EmailService(
             helper.setTo(mail.to)
             helper.setText(html, true)
             helper.setSubject(mail.subject)
+            helper.setText(mail.content)
             helper.setFrom(emailFrom)
             javaMailSender.send(message)
-            logger.info("Confirmation email sent ######")
+            logger.info("Confirmation email sent")
         } catch (e: Exception) {
             logger.info("Sending welcome email failed, check log...")
             e.printStackTrace()

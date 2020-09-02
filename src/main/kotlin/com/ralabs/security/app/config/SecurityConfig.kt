@@ -35,7 +35,7 @@ class SecurityConfig(
 
     @Bean
     fun tokenStore(): TokenStore? {
-        return JdbcTokenStore(jdbcTemplate.getDataSource())
+        return JdbcTokenStore(jdbcTemplate.dataSource)
     }
 
     @Throws(Exception::class)
@@ -79,6 +79,8 @@ class SecurityConfig(
                 .and()
                 .authorizeRequests()
                 .antMatchers("/auth/**")
+                .permitAll()
+                .antMatchers("/password/reset/**")
                 .permitAll()
                 .anyRequest()
                 .authenticated()

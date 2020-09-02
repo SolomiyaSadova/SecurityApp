@@ -16,7 +16,7 @@ class EmailSenderController(
 
     @GetMapping("/send")
     fun sendmail(): String? {
-        emailService.sendWelcomeEmail(Mail("ssolimia@gmail.com", "sadsolomia@gmail.com", "Test Subject", "Test mail"))
+        emailService.sendConfirmationEmail(Mail("ssolimia@gmail.com", "sadsolomia@gmail.com", "Test Subject"))
         return "Send"
     }
 }
