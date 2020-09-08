@@ -6,7 +6,5 @@ import java.util.*
 
 class OnRegistrationCompleteEvent(
         val user: User,
-        val locale: Locale,
-        val appUrl: String,
         val actionName: String
 ) : ApplicationEvent(user)

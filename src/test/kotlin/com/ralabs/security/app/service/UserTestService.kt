@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
 
 @Service
-class UserService {
+class UserTestService {
 
     @Autowired
     lateinit var userRepository: UserRepository

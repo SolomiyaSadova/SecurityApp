@@ -13,13 +13,7 @@ import java.util.stream.Stream
 @Repository
 interface PasswordResetTokenRepository : JpaRepository<PasswordResetToken, Long> {
 
-    fun findByToken(token: String): PasswordResetToken
-
-    fun findByUser(user: User): PasswordResetToken
-
-    fun findAllByExpiryDateLessThan(now: Date): Stream<PasswordResetToken>
-
-    fun deleteByExpiryDateLessThan(now: Date)
+    fun findByToken(token: String): PasswordResetToken?
 
     @Transactional
     @Modifying

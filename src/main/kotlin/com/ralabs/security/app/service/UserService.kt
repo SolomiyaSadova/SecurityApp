@@ -5,10 +5,9 @@ import com.ralabs.security.app.models.User
 import com.ralabs.security.app.repository.PasswordResetTokenRepository
 import com.ralabs.security.app.repository.UserRepository
 import com.ralabs.security.app.request.ApiResponse
-import io.jsonwebtoken.Claims
-import io.jsonwebtoken.impl.DefaultClaims
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+
 import java.util.*
 
 
@@ -33,15 +32,15 @@ class UserService(
     }
 
     fun validatePasswordResetToken(token: String): ApiResponse {
-        val passToken: PasswordResetToken = passwordResetTokenRepository.findByToken(token)
+        val passToken: PasswordResetToken? = passwordResetTokenRepository.findByToken(token)
         return if (!isTokenFound(passToken)) ApiResponse(false, "Token is invalid")
-        else if (isTokenExpired(passToken)) ApiResponse(false, "Token is expired")
+        else if (passToken?.let { isTokenExpired(it) }!!) ApiResponse(false, "Token is expired")
         else ApiResponse(true, "All is good")
     }
 
-    fun getUserByPasswordResetToken(token: String): User {
+    fun getUserByPasswordResetToken(token: String): User? {
         val passwordResetToken = passwordResetTokenRepository.findByToken(token)
-        return passwordResetToken.user
+        return passwordResetToken?.user
     }
 
     private fun isTokenFound(passToken: PasswordResetToken?): Boolean {

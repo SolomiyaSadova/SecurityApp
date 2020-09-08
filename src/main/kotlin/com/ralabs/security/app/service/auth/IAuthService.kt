@@ -1,4 +1,4 @@
-package com.ralabs.security.app.service
+package com.ralabs.security.app.service.auth
 
 import com.ralabs.security.app.models.User
 import com.ralabs.security.app.models.VerificationToken
@@ -24,7 +24,8 @@ interface IAuthService {
 
     fun getVerificationToken(verificationToken: String): VerificationToken?
 
-    fun saveUserAfterEmailConfirmation(verificationToken: String): Unit
+    fun saveUserAfterEmailConfirmation(token: String): Unit
 
     fun checkVerificationToken(token: String): String
+    fun isUserVerified(authentication: Authentication): Boolean
 }

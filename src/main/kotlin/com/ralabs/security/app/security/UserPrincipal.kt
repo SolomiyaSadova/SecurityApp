@@ -17,7 +17,7 @@ class UserPrincipal(
 
     companion object {
         fun create(user: User): UserDetails? {
-            val authorities: List<GrantedAuthority> = user.role
+            val authorities: List<GrantedAuthority> = user.roles
                     .stream()
                     .map { SimpleGrantedAuthority(it.roleName.name) }
                     .collect(Collectors.toList())

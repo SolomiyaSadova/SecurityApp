@@ -1,6 +1,5 @@
 package com.ralabs.security.app.request
 
-import com.ralabs.security.app.validation.constraints.ConfirmPassword
 import com.ralabs.security.app.validation.constraints.SecurePassword
 import javax.validation.constraints.Email
 import javax.validation.constraints.NotEmpty

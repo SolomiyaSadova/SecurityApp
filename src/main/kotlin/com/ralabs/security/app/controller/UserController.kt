@@ -2,7 +2,7 @@ package com.ralabs.security.app.controller
 
 import com.ralabs.security.app.event.OnRegistrationCompleteEvent
 import com.ralabs.security.app.exception.ConfirmPasswordDoesntMatchPasswordException
-import com.ralabs.security.app.exception.UserNotFoundException
+import com.ralabs.security.app.models.PasswordResetToken
 import com.ralabs.security.app.repository.PasswordResetTokenRepository
 import com.ralabs.security.app.repository.UserRepository
 import com.ralabs.security.app.request.ApiResponse
@@ -10,10 +10,8 @@ import com.ralabs.security.app.request.password.PasswordChangeRequest
 import com.ralabs.security.app.request.password.PasswordResetRequest
 import com.ralabs.security.app.security.JwtAuthenticationFilter
 import com.ralabs.security.app.security.JwtTokenProvider
-import com.ralabs.security.app.service.AuthService
+import com.ralabs.security.app.service.auth.AuthService
 import com.ralabs.security.app.service.UserService
-import io.jsonwebtoken.Claims
-import io.jsonwebtoken.impl.DefaultClaims
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -33,10 +31,11 @@ class UserController(
         val userRepository: UserRepository,
         val eventPublisher: ApplicationEventPublisher,
         val jwtTokenProvider: JwtTokenProvider,
-        val jwtAuthenticationFilter: JwtAuthenticationFilter
+        val jwtAuthenticationFilter: JwtAuthenticationFilter,
+        val passwordResetTokenRepository: PasswordResetTokenRepository
 ) {
 
-    @PostMapping("password/change")
+    @PostMapping("/password/change")
     fun changePassword(@Valid @RequestBody passwordChangeRequest: PasswordChangeRequest)
             : ResponseEntity<ApiResponse> {
         val user = userRepository.findByEmail(SecurityContextHolder.getContext().authentication.name)
@@ -61,33 +60,34 @@ class UserController(
                 HttpStatus.OK)
     }
 
-    @GetMapping("password/reset")
+    @GetMapping("/password/reset")
     fun resetPassword(request: HttpServletRequest,
                       @RequestParam("email") email: String): ResponseEntity<ApiResponse> {
         val user = userRepository.findByEmail(email)
                 ?: return ResponseEntity(ApiResponse(
                         false, "There are not user with this email"), HttpStatus.NOT_FOUND)
-        val appUrl: String = request.contextPath
         eventPublisher.publishEvent(OnRegistrationCompleteEvent(user,
-                request.locale, appUrl, "reset password"))
+                "reset password"))
         return ResponseEntity(ApiResponse(true, "Success. Check your email."), HttpStatus.OK)
     }
 
-    @GetMapping("password/reset/token")
+    @GetMapping("/password/reset/token")
     fun resetPasswordWithToken(@RequestBody passwordResetRequest: PasswordResetRequest
     ): ResponseEntity<ApiResponse> {
-        val result = userService.validatePasswordResetToken(passwordResetRequest.token)
+       val result = userService.validatePasswordResetToken(passwordResetRequest.token)
         return if (!result.success) {
             ResponseEntity(result, HttpStatus.BAD_REQUEST)
         } else {
             val user = userService.getUserByPasswordResetToken(passwordResetRequest.token)
-            userService.changeUserPassword(user, passwordResetRequest.newPassword);
-            ResponseEntity(ApiResponse(true, "Success. Password was changed."), HttpStatus.OK)
+            if (user != null) {
+                userService.changeUserPassword(user, passwordResetRequest.newPassword)
+            };
+         ResponseEntity(ApiResponse(true, "Success. Password was changed."), HttpStatus.OK)
         }
     }
 
 
-    @GetMapping("token/refresh")
+    @GetMapping("/token/refresh")
     fun refreshToken(request: HttpServletRequest): ResponseEntity<*>? {
         val token = jwtAuthenticationFilter.getJwtFromRequest(request)
         val claims = jwtTokenProvider.getUserClaims(token)

@@ -7,6 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 
 interface VerificationTokenRepository : JpaRepository<VerificationToken?, Long?> {
-    fun findByToken(token: String): VerificationToken
-    fun findByUser(user: User): VerificationToken?
+    fun findByToken(token: String): VerificationToken?
 }

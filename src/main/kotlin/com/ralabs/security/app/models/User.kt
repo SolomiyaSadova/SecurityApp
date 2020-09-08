@@ -26,7 +26,7 @@ data class User(
         @JoinTable(name = "users_roles",
                 joinColumns = [JoinColumn(name = "user_id")],
                 inverseJoinColumns = [JoinColumn(name = "role_id")])
-        var role: Set<Role> = emptySet()
+        var roles: Set<Role> = emptySet()
 ) {
-        fun toResponse(): UserResponse = UserResponse(ofNullable(id).orElse(0), firstName, lastName, email)
+        fun toResponse(): UserResponse = UserResponse(ofNullable(id).orElse(0), firstName, lastName, email, verified)
 }

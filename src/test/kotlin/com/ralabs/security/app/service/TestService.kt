@@ -1,13 +1,14 @@
 package com.ralabs.security.app.service
 
+import com.google.gson.Gson
 import com.ralabs.security.app.controller.URL
+import com.ralabs.security.app.event.OnRegistrationCompleteEvent
 import com.ralabs.security.app.repository.UserRepository
 import com.ralabs.security.app.request.ApiResponse
 import com.ralabs.security.app.request.LoginRequest
 import com.ralabs.security.app.request.UserResponse
-import org.apache.tomcat.util.json.JSONParser
 import org.codehaus.jackson.map.ObjectMapper
-import org.codehaus.jackson.type.JavaType
+import org.h2.value.Value.JSON
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.json.JacksonJsonParser
 import org.springframework.http.MediaType
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Service
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
-import javax.tools.JavaFileObject
+
 
 @Service
 class TestService {
@@ -51,7 +52,8 @@ class TestService {
 
     fun getUserResponseFromJsonString(jsonString: String): UserResponse {
         return try {
-            objectMapper.readValue(jsonString, UserResponse::class.java)
+            val g = Gson()
+            g.fromJson(jsonString, UserResponse::class.java)
         } catch (e: Exception) {
             throw RuntimeException(e)
         }
@@ -59,9 +61,22 @@ class TestService {
 
     fun getApiResponseFromJsonString(jsonString: String): ApiResponse {
         return try {
-            objectMapper.readValue(jsonString, ApiResponse::class.java)
+            val g = Gson()
+            g.fromJson(jsonString, ApiResponse::class.java)
         } catch (e: Exception) {
             throw RuntimeException(e)
         }
+    }
+
+    fun appEventArgPredicateFunc(expected: OnRegistrationCompleteEvent)
+            : (arg: OnRegistrationCompleteEvent) -> Boolean = { arg ->
+        arg.actionName == expected.actionName &&
+                arg.user.id == expected.user.id &&
+                arg.user.firstName == expected.user.firstName &&
+                arg.user.lastName == expected.user.lastName &&
+                arg.user.email == expected.user.email &&
+                arg.user.verified == expected.user.verified &&
+                arg.user.password == expected.user.password &&
+                arg.user.roles.containsAll(expected.user.roles)
     }
 }
