@@ -1,6 +1,5 @@
 package com.ralabs.security.app.models
 
-import java.util.*
 import javax.persistence.*
 
 @Entity

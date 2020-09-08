@@ -1,67 +1,72 @@
 package com.ralabs.security.app.controller
 
-import com.ralabs.security.app.exception.AppException
-import com.ralabs.security.app.models.Role
-import com.ralabs.security.app.models.RoleName
-import com.ralabs.security.app.models.User
-import com.ralabs.security.app.repository.RoleDAO
-import com.ralabs.security.app.repository.UserDAO
+import com.ralabs.security.app.event.OnRegistrationCompleteEvent
+import com.ralabs.security.app.exception.ConfirmPasswordDoesntMatchPasswordException
+import com.ralabs.security.app.exception.UserAlreadyExistsException
+import com.ralabs.security.app.repository.UserRepository
 import com.ralabs.security.app.request.ApiResponse
 import com.ralabs.security.app.request.JwtAuthenticationResponse
 import com.ralabs.security.app.request.LoginRequest
+import com.ralabs.security.app.request.SignUpRequest
 import com.ralabs.security.app.security.JwtTokenProvider
+import com.ralabs.security.app.service.auth.AuthService
+import org.springframework.context.ApplicationEventPublisher
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.Authentication
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
-import java.util.*
+import org.springframework.web.bind.annotation.*
+import org.springframework.web.context.request.WebRequest
 import javax.validation.Valid
-
 
 @RestController
 @RequestMapping("/auth")
 class AuthController(
-        val userDAO: UserDAO,
-        val passwordEncoder: PasswordEncoder,
-        val roleDAO: RoleDAO,
-        val authenticationManager: AuthenticationManager,
-        val tokenProvider: JwtTokenProvider
+        val authService: AuthService,
+        val tokenProvider: JwtTokenProvider,
+        val eventPublisher: ApplicationEventPublisher,
+        val userRepository: UserRepository
 ) {
+
     @PostMapping("/signup")
-    fun registerUser(@Valid @RequestBody signUpRequest: LoginRequest): ApiResponse {
-        if (userDAO.existsByUsername(signUpRequest.username)!!) {
-            return ApiResponse(false, "Username is already taken!")
+    fun registerUser(@Valid @RequestBody signUpRequest: SignUpRequest, request: WebRequest)
+            : ResponseEntity<*> {
+
+        if (userRepository.existsByEmail(signUpRequest.email)) {
+            throw UserAlreadyExistsException("User with email ${signUpRequest.email} already exists")
         }
-        var user: User = User(signUpRequest.username, signUpRequest.password);
-        user.password = passwordEncoder.encode(signUpRequest.password);
-                try {
-                    val userRole: Role = roleDAO.findByRoleName(RoleName.ROLE_USER)
-                    user.role = Collections.singleton(userRole)
-                 //   userDAO.save(user)
-                } catch (e: AppException) {
-                     AppException("User Role not set.")
-                }
-        userDAO.save(user)
-        return ApiResponse(true, "User registered successfully")
+        if (!authService.isPasswordConfirmPasswordMatched(signUpRequest.password, signUpRequest.confirmPassword)) {
+            throw ConfirmPasswordDoesntMatchPasswordException("Confirm password field doesn't match the password field")
+        }
+        val userWithRole = authService.assignUserRole(authService.toUser(signUpRequest))
+        val savedUser = authService.saveUser(userWithRole)
+
+        eventPublisher.publishEvent(OnRegistrationCompleteEvent(userWithRole,
+//                request.locale, request.contextPath,
+                "confirm registration"))
+
+        return ResponseEntity.ok(savedUser.toResponse())
     }
 
 
     @PostMapping("/signin")
-    fun authenticateUser(@Valid @RequestBody loginRequest: LoginRequest): ResponseEntity<*>? {
-        val authentication: Authentication = authenticationManager.authenticate(
-                UsernamePasswordAuthenticationToken(
-                        loginRequest.username,
-                        loginRequest.password
-                )
-        )
-        SecurityContextHolder.getContext().authentication = authentication
-        val jwt: String = tokenProvider.generateToken(authentication)
-        return ResponseEntity.ok<Any>(JwtAuthenticationResponse(jwt))
+    fun authenticateUser(@Valid @RequestBody loginRequest: LoginRequest)
+            : ResponseEntity<*> {
+        val authentication = authService.authenticate(loginRequest)
+        val verified = authService.isUserVerified(authentication);
+        if(!verified) {
+            return ResponseEntity(ApiResponse(false, "You didn't confirm registration. Check your email!"),
+            HttpStatus.BAD_REQUEST)
+        }
+        val jwt = tokenProvider.generateToken(authentication)
+        return ResponseEntity.ok(JwtAuthenticationResponse(jwt))
+    }
+
+    @GetMapping("/signup/confirm")
+    fun confirmRegistrationWithLink(@RequestParam token: String): ResponseEntity<ApiResponse> {
+        val answer = authService.checkVerificationToken(token)
+        if (answer != "Success") {
+            return ResponseEntity(ApiResponse(false, answer), HttpStatus.BAD_REQUEST)
+        }
+        authService.saveUserAfterEmailConfirmation(token);
+        return ResponseEntity(ApiResponse(true, "You was successfully registered"), HttpStatus.OK)
     }
 }

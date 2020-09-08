@@ -12,6 +12,9 @@ import javax.servlet.http.HttpServletResponse
 
 @Component
 class JwtAuthenticationEntryPoint : AuthenticationEntryPoint {
+
+    private val logger = LoggerFactory.getLogger(JwtAuthenticationEntryPoint::class.java)
+
     @Throws(IOException::class, ServletException::class)
     override fun commence(httpServletRequest: HttpServletRequest,
                           httpServletResponse: HttpServletResponse,
@@ -20,7 +23,4 @@ class JwtAuthenticationEntryPoint : AuthenticationEntryPoint {
         httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.message)
     }
 
-    companion object {
-        private val logger = LoggerFactory.getLogger(JwtAuthenticationEntryPoint::class.java)
-    }
 }

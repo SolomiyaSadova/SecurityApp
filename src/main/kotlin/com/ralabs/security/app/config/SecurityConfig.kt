@@ -3,9 +3,10 @@ package com.ralabs.security.app.config
 import com.ralabs.security.app.security.CustomUserDetailsService
 import com.ralabs.security.app.security.JwtAuthenticationEntryPoint
 import com.ralabs.security.app.security.JwtAuthenticationFilter
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.BeanIds
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
@@ -16,6 +17,9 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+//import org.springframework.security.oauth2.provider.token.DefaultTokenServices
+//import org.springframework.security.oauth2.provider.token.TokenStore
+//import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 
@@ -24,14 +28,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableGlobalMethodSecurity(securedEnabled = true, jsr250Enabled = true, prePostEnabled = true)
 class SecurityConfig(
         val customUserDetailsService: CustomUserDetailsService,
-        val jwtAuthenticationEntryPoint: JwtAuthenticationEntryPoint
+        val unauthorizedHandler: JwtAuthenticationEntryPoint,
+        val jwtAuthenticationFilter: JwtAuthenticationFilter,
+        val jdbcTemplate: JdbcTemplate
 ) : WebSecurityConfigurerAdapter() {
 
-    @Autowired
-    lateinit var jwtAuthenticationFilter: JwtAuthenticationFilter
 //    @Bean
-//    fun jwtAuthenticationFilter(): JwtAuthenticationFilter {
-//        return JwtAuthenticationFilter()
+//    fun tokenStore(): TokenStore? {
+//        return JdbcTokenStore(jdbcTemplate.dataSource)
 //    }
 
     @Throws(Exception::class)
@@ -41,12 +45,20 @@ class SecurityConfig(
                 .passwordEncoder(passwordEncoder())
     }
 
+//    @Bean
+//    @Primary //Making this primary to avoid any accidental duplication with another token service instance of the same name
+//    fun tokenServices(): DefaultTokenServices? {
+//        val defaultTokenServices = DefaultTokenServices()
+//        defaultTokenServices.setTokenStore(tokenStore())
+//        defaultTokenServices.setSupportRefreshToken(true)
+//        return defaultTokenServices
+//    }
     @Bean(BeanIds.AUTHENTICATION_MANAGER)
     @Throws(Exception::class)
     override fun authenticationManagerBean(): AuthenticationManager {
         return super.authenticationManagerBean()
     }
-
+    
     @Bean
     fun passwordEncoder(): PasswordEncoder {
         return BCryptPasswordEncoder()
@@ -60,13 +72,15 @@ class SecurityConfig(
                 .csrf()
                 .disable()
                 .exceptionHandling()
-                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .authenticationEntryPoint(unauthorizedHandler)
                 .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
                 .antMatchers("/auth/**")
+                .permitAll()
+                .antMatchers("/password/reset/**")
                 .permitAll()
                 .anyRequest()
                 .authenticated()
