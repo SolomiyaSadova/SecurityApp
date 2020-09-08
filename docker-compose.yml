@@ -1,0 +1,33 @@
+version: '2.1'
+services:
+  mysql:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'security_app'
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - my-db:/var/lib/mysql
+
+  rabbitmq:
+    image: 'rabbitmq:3.7.16-management'
+    container_name: message-broker
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+
+  app:
+    build: .
+    ports:
+      - 9002:9002
+    volumes:
+      - ./conf:/etc/platfi-ingestor
+    depends_on:
+      - mysql
+      - rabbitmq
+
+volumes:
+  my-db:
